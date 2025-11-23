@@ -8,8 +8,11 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'BaseSplit - Split Bills with XMTP',
+  title: 'HashItOut - Split Bills with XMTP',
   description: 'Split bills easily using XMTP and Base',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
