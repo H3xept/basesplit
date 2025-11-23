@@ -16,7 +16,7 @@ import {
     type LineItem,
 } from './db.js';
 import {
-    parseReceiptWithOpenAI,
+    parseReceiptWithGoogleVision,
     downloadAttachment,
     calculateTotal,
 } from './receipt-parser.js';
@@ -170,12 +170,12 @@ async function handleReceiptAttachment(
 
         console.log(`✅ Downloaded attachment (${imageData.length} bytes)`);
 
-        // Convert to base64 for OpenAI
+        // Convert to base64 for Google Vision
         const imageBase64 = await downloadAttachment(imageData);
 
-        // Parse receipt with OpenAI
-        console.log('🔍 Parsing receipt with OpenAI...');
-        const parsedReceipt = await parseReceiptWithOpenAI(imageBase64);
+        // Parse receipt with Google Vision
+        console.log('🔍 Parsing receipt with Google Vision...');
+        const parsedReceipt = await parseReceiptWithGoogleVision(imageBase64);
 
         // Generate bill ID
         const billId = randomUUID();

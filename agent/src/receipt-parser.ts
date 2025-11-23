@@ -1,15 +1,19 @@
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// OpenAI API configuration
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+// Initialize Gemini
+function getGeminiModel() {
+  const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GOOGLE_VISION_API_KEY;
 
-if (!OPENAI_API_KEY) {
-  throw new Error('OPENAI_API_KEY environment variable is required');
+  if (!GOOGLE_API_KEY) {
+    throw new Error('GOOGLE_API_KEY environment variable is required');
+  }
+
+  const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
+  return genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    generationConfig: { responseMimeType: "application/json" }
+  });
 }
-
-const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY,
-});
 
 export interface ParsedReceipt {
   items: Array<{
@@ -26,119 +30,100 @@ export interface ParsedReceipt {
 }
 
 /**
- * Parse receipt image using OpenAI GPT-4 Vision API
+ * Parse receipt image using Google Gemini AI
  */
-export async function parseReceiptWithOpenAI(
+export async function parseReceiptWithGoogleVision(
   imageBase64: string
 ): Promise<ParsedReceipt> {
-  console.log('📋 Parsing receipt with OpenAI Vision API...');
-
-  const systemPrompt = `You are an advanced optical character recognition (OCR) assistant specialized in restaurant and retail receipts. Your job is to extract line items, prices, and the total from a provided image and format them into strict JSON.
-
-Constraints:
-- Ignore tax, subtotal, and tip lines in the items array. Only extract distinct purchasable items.
-- If multiple counts of an item exist (e.g., "2x Burger"), split them into separate entries if possible, or note the quantity in the description.
-- Ensure all prices are numbers (floats), not strings.
-- Do not hallucinate items that are not visible.
-
-Output Format (JSON Only):
-{
-  "merchant": "Name of the place (or Unknown)",
-  "date": "YYYY-MM-DD (or null)",
-  "currency": "USD",
-  "total_amount": 0.00,
-  "items": [
-    {
-      "description": "Burger",
-      "price": 15.00
-    },
-    {
-      "description": "Fries",
-      "price": 5.50
-    }
-  ]
-}
-
-Edge Case Handling:
-- If the image is blurry and unreadable, return: {"error": "IMAGE_UNREADABLE"}
-- If the image is not a receipt, return: {"error": "NOT_A_RECEIPT"}`;
+  console.log('📋 Parsing receipt with Google Gemini AI...');
 
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt,
-        },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:image/jpeg;base64,${imageBase64}`,
-              },
-            },
-          ],
-        },
-      ],
-      max_tokens: 1000,
-      temperature: 0.1,
-    });
+    const model = getGeminiModel();
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('No response from OpenAI');
-    }
+    const prompt = `
+      Analyze this receipt image. Extract the following data:
+      1. Merchant Name
+      2. Date (in YYYY-MM-DD format if possible, otherwise as found)
+      3. Total Amount (the final amount paid)
+      4. A list of all line items with product description and price.
 
-    // Parse JSON response
-    let parsedResponse: any;
-    try {
-      parsedResponse = JSON.parse(content);
-    } catch (parseError) {
-      console.error('Failed to parse OpenAI response as JSON:', content);
-      throw new Error('Invalid JSON response from OpenAI');
-    }
+      IMPORTANT: Extract ONLY the actual purchased items, NOT subtotals, tax, tips, or totals.
 
-    // Check for error cases
-    if (parsedResponse.error === 'IMAGE_UNREADABLE') {
-      throw new Error('IMAGE_UNREADABLE: The receipt image is too blurry or unclear to read');
-    }
+      Return ONLY valid JSON with this exact schema:
+      {
+        "merchant": "string",
+        "date": "string",
+        "total": number,
+        "currency": "USD",
+        "items": [
+          { "description": "string", "price": number }
+        ]
+      }
 
-    if (parsedResponse.error === 'NOT_A_RECEIPT') {
-      throw new Error('NOT_A_RECEIPT: The provided image is not a receipt');
-    }
+      Rules:
+      - Each item must have a description and price
+      - Prices should be numbers (e.g., 12.99, not "$12.99")
+      - If you can't find the merchant, use "Unknown"
+      - If you can't find the date, use empty string ""
+      - The total should be the final amount (including tax/tip if shown)
+      - Remove any quantity indicators from descriptions (1x, 2x, etc.)
+    `;
 
-    // Validate response structure
-    if (!parsedResponse.items || !Array.isArray(parsedResponse.items)) {
-      throw new Error('Invalid receipt data: missing items array');
-    }
-
-    // Convert to ParsedReceipt format
-    const receiptData: ParsedReceipt = {
-      merchant: parsedResponse.merchant,
-      date: parsedResponse.date,
-      currency: parsedResponse.currency,
-      items: parsedResponse.items.map((item: any) => ({
-        description: item.description,
-        price: parseFloat(item.price),
-      })),
-      total: parsedResponse.total_amount,
+    const imagePart = {
+      inlineData: {
+        data: imageBase64,
+        mimeType: "image/jpeg",
+      },
     };
 
-    // Validate items
-    receiptData.items.forEach((item, index) => {
-      if (!item.description || typeof item.price !== 'number' || isNaN(item.price)) {
-        throw new Error(`Invalid item at index ${index}: ${JSON.stringify(item)}`);
-      }
-    });
+    console.log('🤖 Sending image to Gemini for analysis...');
+    const result = await model.generateContent([prompt, imagePart]);
+    const response = await result.response;
+    const text = response.text();
 
-    console.log(`✅ Parsed receipt with ${receiptData.items.length} items (Total: $${receiptData.total})`);
-    return receiptData;
+    console.log('📝 Gemini Raw Response:', text);
 
-  } catch (error) {
-    console.error('Error parsing receipt with OpenAI:', error);
+    // Parse the JSON response
+    const data = JSON.parse(text) as ParsedReceipt;
+
+    // Validate we found at least some items
+    if (!data.items || data.items.length === 0) {
+      throw new Error('NOT_A_RECEIPT: Could not extract any items from the image');
+    }
+
+    // Ensure merchant is set
+    if (!data.merchant) {
+      data.merchant = 'Unknown';
+    }
+
+    // If total is missing, calculate from items
+    if (!data.total || data.total === 0) {
+      data.total = data.items.reduce((sum, item) => sum + item.price, 0);
+    }
+
+    // Ensure currency is set
+    if (!data.currency) {
+      data.currency = 'USD';
+    }
+
+    console.log(`✅ Parsed receipt with ${data.items.length} items (Total: $${data.total.toFixed(2)})`);
+    console.log(`   Merchant: ${data.merchant}`);
+    console.log(`   Date: ${data.date || 'Not found'}`);
+
+    return data;
+
+  } catch (error: any) {
+    console.error('Error parsing receipt with Gemini:', error);
+
+    // Provide more helpful error messages
+    if (error.message && error.message.includes('API_KEY')) {
+      throw new Error('GOOGLE_API_KEY is missing or invalid. Please set it in your .env file.');
+    }
+
+    if (error instanceof SyntaxError) {
+      throw new Error('Failed to parse Gemini response as JSON. The image might not be a valid receipt.');
+    }
+
     throw error;
   }
 }
