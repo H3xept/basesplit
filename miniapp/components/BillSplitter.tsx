@@ -164,19 +164,22 @@ export function BillSplitter({
   // Handle success
   if (isSuccess) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white dark:bg-dark-card rounded-2xl shadow-2xl p-8 border border-gray-100 dark:border-dark-border animate-scale-in">
         <div className="text-center">
-          <div className="text-6xl mb-4">✅</div>
-          <h2 className="text-2xl font-bold mb-2">Payment Successful!</h2>
-          <p className="text-gray-600 mb-4">
+          <div className="text-7xl mb-6 animate-scale-in">✅</div>
+          <h2 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white">Payment Successful!</h2>
+          <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
             You paid ${selectedTotal.toFixed(2)} USDC
           </p>
-          <p className="text-sm text-gray-500">
-            Transaction: {hash?.substring(0, 10)}...{hash?.substring(hash.length - 8)}
-          </p>
+          <div className="bg-gray-50 dark:bg-dark-hover rounded-lg p-4 mb-6">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Transaction Hash</p>
+            <p className="font-mono text-sm text-gray-700 dark:text-gray-300 break-all">
+              {hash?.substring(0, 10)}...{hash?.substring(hash.length - 8)}
+            </p>
+          </div>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-6 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90"
+            className="px-8 py-3 bg-primary dark:bg-primary-light text-white rounded-lg hover:bg-opacity-90 font-semibold transition-all hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
           >
             Done
           </button>
@@ -186,11 +189,12 @@ export function BillSplitter({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white dark:bg-dark-card rounded-2xl shadow-2xl p-8 border border-gray-100 dark:border-dark-border transition-all duration-300">
       {/* Wallet Connection */}
       {!hasMounted || !isConnected ? (
-        <div className="text-center py-8">
-          <p className="text-gray-600 mb-4">
+        <div className="text-center py-12">
+          <div className="text-5xl mb-4">🔐</div>
+          <p className="text-xl text-gray-700 dark:text-gray-300 mb-6 font-medium">
             Connect your wallet to split this bill
           </p>
           <div className="flex justify-center">
@@ -198,23 +202,24 @@ export function BillSplitter({
           </div>
         </div>
       ) : !chain || (!USDC_ADDRESS[chain.id as keyof typeof USDC_ADDRESS]) ? (
-        <div className="text-center py-8">
-          <p className="text-gray-600 mb-4">
+        <div className="text-center py-12">
+          <div className="text-5xl mb-4">🔄</div>
+          <p className="text-xl text-gray-700 dark:text-gray-300 mb-3 font-medium">
             Please switch to a supported network
           </p>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
             {chain ? `You're on ${chain.name}. Please switch to:` : 'Your wallet is connected but chain not detected.'}
           </p>
           <div className="flex flex-col gap-3 max-w-xs mx-auto">
             <button
               onClick={() => switchChain({ chainId: base.id })}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+              className="px-6 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 font-medium transition-all hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
             >
               Switch to Base
             </button>
             <button
               onClick={() => switchChain({ chainId: baseSepolia.id })}
-              className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-opacity-90 font-medium"
+              className="px-6 py-3 bg-primary dark:bg-primary-light text-white rounded-lg hover:bg-opacity-90 font-medium transition-all hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
             >
               Switch to Base Sepolia (Testnet)
             </button>
@@ -223,19 +228,19 @@ export function BillSplitter({
       ) : (
         <>
           {/* Network Info */}
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl animate-slide-up">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-green-800">
+              <span className="text-green-800 dark:text-green-300 font-medium">
                 Connected to <strong>{chain.name}</strong>
               </span>
-              <span className="text-green-600">✓</span>
+              <span className="text-green-600 dark:text-green-400 text-xl">✓</span>
             </div>
           </div>
 
           {/* Items List */}
           <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-4">Select Your Items</h2>
-            <div className="space-y-2">
+            <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Select Your Items</h2>
+            <div className="space-y-3">
               {items.map((item) => {
                 const isSelected = selectedItems.has(item.id);
                 const isClaimed = Boolean(item.claimed_by);
@@ -243,34 +248,34 @@ export function BillSplitter({
                 return (
                   <div
                     key={item.id}
-                    className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
+                    className={`flex items-center justify-between p-5 rounded-xl border-2 transition-all duration-200 ${
                       isClaimed
-                        ? 'bg-gray-50 border-gray-200 opacity-50'
+                        ? 'bg-gray-50 dark:bg-gray-800/30 border-gray-200 dark:border-gray-700 opacity-50'
                         : isSelected
-                        ? 'bg-primary bg-opacity-10 border-primary'
-                        : 'border-gray-200 hover:border-gray-300 cursor-pointer'
+                        ? 'bg-primary/10 dark:bg-primary-light/20 border-primary dark:border-primary-light shadow-md'
+                        : 'border-gray-200 dark:border-dark-border hover:border-primary/50 dark:hover:border-primary-light/50 cursor-pointer hover:shadow-md bg-white dark:bg-dark-hover'
                     }`}
                     onClick={() => !isClaimed && toggleItem(item.id)}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <input
                         type="checkbox"
                         checked={isSelected}
                         disabled={isClaimed}
                         onChange={() => {}}
-                        className="w-5 h-5"
+                        className="w-5 h-5 accent-primary"
                       />
                       <div>
-                        <p className="font-medium">{item.description}</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{item.description}</p>
                         {isClaimed && (
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             Already claimed by{' '}
                             {item.claimed_by?.substring(0, 6)}...
                           </p>
                         )}
                       </div>
                     </div>
-                    <p className="font-semibold">${item.price.toFixed(2)}</p>
+                    <p className="font-bold text-lg text-gray-900 dark:text-white">${item.price.toFixed(2)}</p>
                   </div>
                 );
               })}
@@ -278,10 +283,10 @@ export function BillSplitter({
           </div>
 
           {/* Payment Summary */}
-          <div className="border-t pt-4">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-lg font-semibold">Your Total:</span>
-              <span className="text-2xl font-bold text-primary">
+          <div className="border-t border-gray-200 dark:border-dark-border pt-6 mt-6">
+            <div className="flex justify-between items-center mb-6 px-2">
+              <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">Your Total:</span>
+              <span className="text-3xl font-bold text-gradient">
                 ${selectedTotal.toFixed(2)}
               </span>
             </div>
@@ -289,19 +294,21 @@ export function BillSplitter({
             <button
               onClick={handlePay}
               disabled={selectedItems.size === 0 || isPaying || isConfirming}
-              className="w-full py-4 bg-primary text-white rounded-lg font-semibold text-lg hover:bg-opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all"
+              className="w-full py-5 bg-primary dark:bg-primary-light text-white rounded-xl font-bold text-lg hover:bg-opacity-90 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed disabled:text-gray-500 dark:disabled:text-gray-400 transition-all hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:hover:scale-100"
             >
               {isPaying || isConfirming
-                ? 'Processing...'
+                ? '⏳ Processing...'
                 : selectedItems.size === 0
                 ? 'Select items to pay'
-                : `Pay ${selectedTotal.toFixed(2)} USDC`}
+                : `💳 Pay ${selectedTotal.toFixed(2)} USDC`}
             </button>
 
-            <p className="text-xs text-gray-500 text-center mt-2">
-              Paying to: {payerAddress.substring(0, 6)}...
-              {payerAddress.substring(payerAddress.length - 4)}
-            </p>
+            <div className="mt-4 p-3 bg-gray-50 dark:bg-dark-hover rounded-lg">
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                Paying to: <span className="font-mono">{payerAddress.substring(0, 6)}...
+                {payerAddress.substring(payerAddress.length - 4)}</span>
+              </p>
+            </div>
           </div>
         </>
       )}
