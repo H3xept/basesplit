@@ -11,12 +11,22 @@ export function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            retry: false,
+            retry: 3, // Retry failed queries up to 3 times
+            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+            staleTime: 10_000, // Data is fresh for 10 seconds
+            refetchOnWindowFocus: false, // Don't refetch when window regains focus
+            refetchOnMount: false, // Don't refetch on component mount if data exists
+            onError: (error) => {
+              // Log errors but don't throw
+              console.warn('[QueryClient] Query error:', error);
+            },
           },
           mutations: {
-            retry: false,
-            onError: () => {
-              // Suppress error notifications
+            retry: 2, // Retry mutations up to 2 times
+            retryDelay: 1000,
+            onError: (error) => {
+              // Log errors but don't throw
+              console.warn('[QueryClient] Mutation error:', error);
             },
           },
         },

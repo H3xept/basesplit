@@ -1,4 +1,4 @@
-import { http, createConfig } from 'wagmi';
+import { http, createConfig, fallback } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
 import { coinbaseWallet, injected } from 'wagmi/connectors';
 
@@ -18,7 +18,22 @@ export const config = createConfig({
     }),
   ],
   transports: {
-    [base.id]: http('https://mainnet.base.org'),
-    [baseSepolia.id]: http('https://sepolia.base.org'),
+    [base.id]: fallback([
+      http('https://mainnet.base.org'),
+      http('https://base.llamarpc.com'),
+      http('https://base-rpc.publicnode.com'),
+      http(), // Uses the chain's default RPC
+    ]),
+    [baseSepolia.id]: fallback([
+      http('https://sepolia.base.org'),
+      http('https://base-sepolia-rpc.publicnode.com'),
+      http(), // Uses the chain's default RPC
+    ]),
   },
+  batch: {
+    multicall: {
+      wait: 100,
+    },
+  },
+  pollingInterval: 12_000, // Poll every 12 seconds instead of default 4 seconds
 });

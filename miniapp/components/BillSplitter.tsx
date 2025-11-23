@@ -122,6 +122,12 @@ export function BillSplitter({
     const claimItems = async () => {
       if (isSuccess && hash && address && selectedItems.size > 0) {
         try {
+          console.log('[BillSplitter] Claiming items...', {
+            itemIds: Array.from(selectedItems),
+            claimedBy: address,
+            txHash: hash,
+          });
+
           const response = await fetch('/api/claim', {
             method: 'POST',
             headers: {
@@ -135,10 +141,19 @@ export function BillSplitter({
           });
 
           if (!response.ok) {
-            console.error('Failed to claim items:', await response.text());
+            const errorText = await response.text();
+            console.error('[BillSplitter] Failed to claim items:', errorText);
+            console.error('[BillSplitter] Response status:', response.status);
+          } else {
+            const result = await response.json();
+            console.log('[BillSplitter] Successfully claimed items:', result);
           }
         } catch (err) {
-          console.error('Error claiming items:', err);
+          console.error('[BillSplitter] Error claiming items:', err);
+          if (err instanceof Error) {
+            console.error('[BillSplitter] Error message:', err.message);
+            console.error('[BillSplitter] Error stack:', err.stack);
+          }
         }
       }
     };
