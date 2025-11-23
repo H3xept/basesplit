@@ -1,25 +1,33 @@
 import pg from 'pg';
 const { Pool } = pg;
 
-// Initialize PostgreSQL connection pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
+// Lazy initialization of PostgreSQL connection pool
+let pool: pg.Pool | null = null;
 
-// Test connection
-pool.on('connect', () => {
-  console.log('✅ Connected to PostgreSQL database');
-});
+function getPool(): pg.Pool {
+  if (!pool) {
+    // Initialize pool only when first needed (after dotenv.config() has run)
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    });
 
-pool.on('error', (err) => {
-  console.error('❌ Unexpected database error:', err);
-  process.exit(-1);
-});
+    // Test connection
+    pool.on('connect', () => {
+      console.log('✅ Connected to PostgreSQL database');
+    });
+
+    pool.on('error', (err) => {
+      console.error('❌ Unexpected database error:', err);
+      process.exit(-1);
+    });
+  }
+  return pool;
+}
 
 // Create tables (should be run once during setup, but safe with IF NOT EXISTS)
 export async function initDatabase() {
-  const client = await pool.connect();
+  const client = await getPool().connect();
   try {
     // Bills table
     await client.query(`
@@ -93,7 +101,7 @@ export interface LineItem {
 }
 
 export async function createBill(bill: Bill): Promise<void> {
-  await pool.query(
+  await getPool().query(
     `INSERT INTO bills (id, conversation_id, payer_address, image_url, total_amount, is_settled)
      VALUES ($1, $2, $3, $4, $5, $6)`,
     [
@@ -108,7 +116,7 @@ export async function createBill(bill: Bill): Promise<void> {
 }
 
 export async function createLineItem(item: LineItem): Promise<void> {
-  await pool.query(
+  await getPool().query(
     `INSERT INTO line_items (id, bill_id, description, price, claimed_by, paid_tx_hash)
      VALUES ($1, $2, $3, $4, $5, $6)`,
     [
@@ -123,7 +131,7 @@ export async function createLineItem(item: LineItem): Promise<void> {
 }
 
 export async function getBill(billId: string): Promise<Bill | undefined> {
-  const result = await pool.query(
+  const result = await getPool().query(
     'SELECT * FROM bills WHERE id = $1',
     [billId]
   );
@@ -143,7 +151,7 @@ export async function getBill(billId: string): Promise<Bill | undefined> {
 }
 
 export async function getLineItems(billId: string): Promise<LineItem[]> {
-  const result = await pool.query(
+  const result = await getPool().query(
     'SELECT * FROM line_items WHERE bill_id = $1',
     [billId]
   );
@@ -163,7 +171,7 @@ export async function updateLineItemClaim(
   claimedBy: string,
   txHash: string
 ): Promise<void> {
-  await pool.query(
+  await getPool().query(
     `UPDATE line_items
      SET claimed_by = $1, paid_tx_hash = $2
      WHERE id = $3`,
@@ -172,11 +180,11 @@ export async function updateLineItemClaim(
 }
 
 export async function markBillAsSettled(billId: string): Promise<void> {
-  await pool.query(
+  await getPool().query(
     'UPDATE bills SET is_settled = TRUE WHERE id = $1',
     [billId]
   );
 }
 
-// Export pool for any custom queries
-export { pool };
+// Export pool getter for any custom queries
+export { getPool as pool };

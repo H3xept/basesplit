@@ -1,7 +1,11 @@
+import dotenv from 'dotenv';
+
+// Load environment variables BEFORE any other imports that might use them
+dotenv.config();
+
 import { Client, type Signer } from '@xmtp/node-sdk';
 import { createWalletClient, http, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import dotenv from 'dotenv';
 import {
     AttachmentCodec,
     RemoteAttachmentCodec,
@@ -21,8 +25,6 @@ import {
     calculateTotal,
 } from './receipt-parser.js';
 import { randomUUID } from 'crypto';
-
-dotenv.config();
 
 // Environment variables
 const PRIVATE_KEY = process.env.PRIVATE_KEY as Hex;
