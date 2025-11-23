@@ -338,9 +338,30 @@ async function main() {
                     contentType === 'remoteStaticAttachment'
                 ) {
                     console.log('📎 Processing attachment...');
+
+                    // Send immediate acknowledgment
+                    try {
+                        const conversation = await client.conversations.getConversationById(message.conversationId);
+                        if (conversation) {
+                            await conversation.send('Processing your receipt... 🧾');
+                        }
+                    } catch (error) {
+                        console.error('Error sending acknowledgment:', error);
+                    }
+
                     await handleReceiptAttachment(message, client);
                 } else if (contentType === 'text') {
                     console.log('💬 Text message received (not processing, waiting for attachments)');
+
+                    // Send rejection message for text-only messages
+                    try {
+                        const conversation = await client.conversations.getConversationById(message.conversationId);
+                        if (conversation) {
+                            await conversation.send('Cool! Please only share receipts tho!');
+                        }
+                    } catch (error) {
+                        console.error('Error sending rejection message:', error);
+                    }
                 } else {
                     console.log('⚠️  Unknown message type, skipping');
                 }
