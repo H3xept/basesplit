@@ -16,6 +16,7 @@ out/
 *.sqlite
 *.sqlite3
 database.db
+data/
 
 # XMTP local storage
 xmtp-dev-*.db3*
@@ -55,3 +56,4 @@ Thumbs.db
 .vercel/
 *.tsbuildinfo
 next-env.d.ts
+.vercel

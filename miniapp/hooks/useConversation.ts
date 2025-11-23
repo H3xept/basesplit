@@ -23,7 +23,14 @@ export function useConversation() {
       setError(null);
 
       try {
+        // First sync conversations to discover any new ones
+        await client!.conversations.sync();
+
         const conv = await getAgentConversation(client!);
+
+        // Sync the specific conversation to get latest messages
+        await conv.sync();
+
         if (isMounted) {
           setConversation(conv);
         }

@@ -32,10 +32,15 @@ export function useMessages() {
     let isMounted = true;
 
     async function loadMessages() {
+      if (!conversation) return;
+
       setIsLoading(true);
       setError(null);
 
       try {
+        // Sync conversation first to get latest messages
+        await conversation.sync();
+
         const msgs = await conversation.messages();
         if (isMounted) {
           const formattedMessages = msgs.map((msg) => ({
@@ -63,8 +68,47 @@ export function useMessages() {
 
     loadMessages();
 
+    // Set up periodic syncing to catch messages that the stream might miss
+    const syncInterval = setInterval(async () => {
+      if (!conversation || !isMounted) return;
+
+      try {
+        console.log('🔄 Syncing conversation for new messages...');
+        await conversation.sync();
+
+        const msgs = await conversation.messages();
+        if (isMounted) {
+          const formattedMessages = msgs.map((msg) => ({
+            id: msg.id,
+            senderInboxId: msg.senderInboxId,
+            conversationId: msg.conversationId,
+            content: msg.content,
+            contentType: msg.contentType,
+            sentAt: new Date(Number(msg.sentAtNs) / 1_000_000),
+            isSelf: msg.senderInboxId === client?.inboxId,
+          }));
+
+          // Only update if we have new messages
+          setMessages((prevMessages) => {
+            const existingIds = new Set(prevMessages.map(m => m.id));
+            const newMessages = formattedMessages.filter(m => !existingIds.has(m.id));
+
+            if (newMessages.length > 0) {
+              console.log(`✅ Found ${newMessages.length} new message(s)`);
+              return formattedMessages; // Use all messages to maintain order
+            }
+
+            return prevMessages;
+          });
+        }
+      } catch (err) {
+        console.error('Failed to sync conversation:', err);
+      }
+    }, 3000); // Sync every 3 seconds
+
     return () => {
       isMounted = false;
+      clearInterval(syncInterval);
     };
   }, [conversation, client]);
 
@@ -133,6 +177,22 @@ export function useMessages() {
 
         // Send the message
         await conversation.send(content);
+
+        // Sync to ensure message is committed
+        await conversation.sync();
+
+        // Reload messages to replace temp message with real one
+        const msgs = await conversation.messages();
+        const formattedMessages = msgs.map((msg) => ({
+          id: msg.id,
+          senderInboxId: msg.senderInboxId,
+          conversationId: msg.conversationId,
+          content: msg.content,
+          contentType: msg.contentType,
+          sentAt: new Date(Number(msg.sentAtNs) / 1_000_000),
+          isSelf: msg.senderInboxId === client?.inboxId,
+        }));
+        setMessages(formattedMessages);
       } catch (err) {
         console.error('Failed to send message:', err);
         // Remove optimistic message on error

@@ -9,7 +9,8 @@ export function createXMTPSigner(walletClient: WalletClient): Signer {
     throw new Error('Wallet client must have an account');
   }
 
-  const address = walletClient.account.address;
+  const account = walletClient.account;
+  const address = account.address;
 
   return {
     type: 'EOA',
@@ -20,7 +21,7 @@ export function createXMTPSigner(walletClient: WalletClient): Signer {
     signMessage: async (message: string): Promise<Uint8Array> => {
       // Request signature from wallet
       const signature = await walletClient.signMessage({
-        account: walletClient.account,
+        account,
         message,
       });
 

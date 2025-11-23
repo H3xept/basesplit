@@ -25,6 +25,8 @@ import {
     calculateTotal,
 } from './receipt-parser.js';
 import { randomUUID } from 'crypto';
+import { mkdirSync, existsSync } from 'fs';
+import { join, dirname } from 'path';
 
 // Environment variables
 const PRIVATE_KEY = process.env.PRIVATE_KEY as Hex;
@@ -261,6 +263,8 @@ Split the bill here:
 ${miniappLink}`;
 
         await conversation.send(responseMessage);
+        // Sync to ensure message is fully committed
+        await conversation.sync();
         console.log('✅ Sent miniapp link to conversation');
 
     } catch (error) {
@@ -273,6 +277,8 @@ ${miniappLink}`;
                 await conversation.send(
                     '❌ Failed to process receipt. Please try again with a clearer image.'
                 );
+                // Sync to ensure message is fully committed
+                await conversation.sync();
             }
         } catch (sendError) {
             console.error('Failed to send error message:', sendError);
@@ -304,14 +310,55 @@ async function main() {
         dbEncryptionKey[i] = privateKeyBytes[i % privateKeyBytes.length];
     }
 
+    // Ensure data directory exists
+    // Use environment variable for Railway volume support, fallback to local path
+    const dbPath = process.env.DB_PATH || join(process.cwd(), 'data', 'xmtp.db3');
+    const dbDir = dirname(dbPath);
+    if (!existsSync(dbDir)) {
+        mkdirSync(dbDir, { recursive: true });
+        console.log(`📁 Created database directory: ${dbDir}`);
+    }
+    console.log(`💾 Database path: ${dbPath}`);
+
     const client = await Client.create(signer, {
         env: XMTP_ENV as 'local' | 'dev' | 'production',
         dbEncryptionKey,
+        dbPath, // Persist the database to avoid creating new installations
         codecs: [new AttachmentCodec(), new RemoteAttachmentCodec()],
     });
 
     console.log(`✅ XMTP client created (env: ${XMTP_ENV})`);
     console.log(`📨 Inbox ID: ${client.inboxId}`);
+
+    // Sync conversations to discover any existing ones
+    console.log('🔄 Syncing conversations...');
+    await client.conversations.sync();
+
+    // List all conversations
+    const conversations = await client.conversations.list();
+    console.log(`✅ Initial conversation sync complete - Found ${conversations.length} conversations`);
+
+    if (conversations.length > 0) {
+        console.log('📋 Active conversations:');
+        for (const conv of conversations) {
+            console.log(`  - ${conv.id} with ${conv.members.length} members`);
+        }
+    } else {
+        console.log('⚠️  No conversations found. Waiting for new DMs...');
+    }
+
+    // Set up periodic conversation syncing to discover new conversations
+    // This ensures the agent receives messages from newly created chats
+    const syncInterval = setInterval(async () => {
+        try {
+            console.log('🔄 Syncing conversations...');
+            await client.conversations.sync();
+            const convs = await client.conversations.list();
+            console.log(`✅ Conversation sync complete - ${convs.length} total conversations`);
+        } catch (error) {
+            console.error('Failed to sync conversations:', error);
+        }
+    }, 15000); // Sync every 15 seconds (reduced from 5s to avoid processing duplicate intents)
 
     // Stream all messages
     console.log('👂 Listening for receipt attachments...');
@@ -352,6 +399,8 @@ async function main() {
                         const conversation = await client.conversations.getConversationById(message.conversationId);
                         if (conversation) {
                             await conversation.send('Processing your receipt... 🧾');
+                            // Sync the conversation to ensure the message is fully committed
+                            await conversation.sync();
                         }
                     } catch (error) {
                         console.error('Error sending acknowledgment:', error);
@@ -366,6 +415,8 @@ async function main() {
                         const conversation = await client.conversations.getConversationById(message.conversationId);
                         if (conversation) {
                             await conversation.send('Cool! Please only share receipts tho!');
+                            // Sync to ensure message is fully committed
+                            await conversation.sync();
                         }
                     } catch (error) {
                         console.error('Error sending rejection message:', error);
@@ -387,6 +438,8 @@ async function main() {
     // Keep process running
     process.on('SIGINT', async () => {
         console.log('\n👋 Shutting down agent...');
+        // Clear the sync interval
+        clearInterval(syncInterval);
         // Close stream if needed
         process.exit(0);
     });

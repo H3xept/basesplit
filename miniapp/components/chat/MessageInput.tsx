@@ -66,6 +66,9 @@ export function MessageInput() {
       // Send attachment
       await conversation.send(attachment, ContentTypeAttachment);
 
+      // Sync to ensure message is committed
+      await conversation.sync();
+
       // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
