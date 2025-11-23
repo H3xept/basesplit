@@ -13,7 +13,7 @@ export const config = createConfig({
   connectors: [
     injected(), // Supports all injected wallets (MetaMask, Rabby, Rainbow, etc.)
     coinbaseWallet({
-      appName: 'SplitEt',
+      appName: 'BaseSplit',
       preference: 'smartWalletOnly',
     }),
   ],

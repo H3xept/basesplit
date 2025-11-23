@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd miniapp && npm run build",
+  "outputDirectory": "miniapp/.next",
+  "installCommand": "cd miniapp && npm install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "env": {
+    "POSTGRES_URL": "@postgres_url",
+    "NEXT_PUBLIC_WC_PROJECT_ID": "@next_public_wc_project_id"
+  }
+}

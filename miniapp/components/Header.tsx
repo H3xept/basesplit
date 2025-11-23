@@ -11,7 +11,7 @@ export function Header() {
           {/* Logo/Brand */}
           <Link href="/" className="flex items-center">
             <h1 className="text-2xl font-bold text-gray-900">
-              SplitEt <span className="text-primary">💸</span>
+              BaseSplit <span className="text-primary">💸</span>
             </h1>
           </Link>
 

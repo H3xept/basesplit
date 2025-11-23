@@ -10,7 +10,7 @@ export default async function SplitBillPage({ params }: PageProps) {
   const { billId } = await params;
 
   // Fetch bill and items from database
-  const data = getBillWithItems(billId);
+  const data = await getBillWithItems(billId);
 
   if (!data) {
     notFound();

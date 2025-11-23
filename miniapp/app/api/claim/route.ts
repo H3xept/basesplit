@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     // Update each item
     console.log('[API /api/claim] Updating items in database...');
     for (const itemId of itemIds) {
-      updateLineItemClaim(itemId, claimedBy, txHash);
+      await updateLineItemClaim(itemId, claimedBy, txHash);
     }
 
     console.log('[API /api/claim] Successfully claimed', itemIds.length, 'items');

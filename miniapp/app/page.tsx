@@ -2,7 +2,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex items-center justify-center p-8">
       <div className="max-w-2xl text-center">
-        <h1 className="text-5xl font-bold mb-4">SplitEt 💸</h1>
+        <h1 className="text-5xl font-bold mb-4">BaseSplit 💸</h1>
         <p className="text-xl text-gray-600 mb-8">
           Split bills easily using XMTP and Base
         </p>

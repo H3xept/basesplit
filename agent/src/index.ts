@@ -230,19 +230,19 @@ async function handleReceiptAttachment(
             is_settled: false,
         };
 
-        createBill(bill);
+        await createBill(bill);
         console.log(`✅ Created bill ${billId} for $${totalAmount.toFixed(2)}`);
 
         // Create line items
-        parsedReceipt.items.forEach((item) => {
+        for (const item of parsedReceipt.items) {
             const lineItem: LineItem = {
                 id: randomUUID(),
                 bill_id: billId,
                 description: item.description,
                 price: item.price,
             };
-            createLineItem(lineItem);
-        });
+            await createLineItem(lineItem);
+        }
 
         console.log(`✅ Created ${parsedReceipt.items.length} line items`);
 
@@ -282,10 +282,10 @@ ${miniappLink}`;
  * Main agent function
  */
 async function main() {
-    console.log('🚀 Starting SplitEt XMTP Agent...');
+    console.log('🚀 Starting BaseSplit XMTP Agent...');
 
     // Initialize database
-    initDatabase();
+    await initDatabase();
 
     // Create signer
     const signer = createSigner(PRIVATE_KEY);

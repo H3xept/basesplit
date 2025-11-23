@@ -7,7 +7,7 @@ import { Header } from '@/components/Header';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'SplitEt - Split Bills with XMTP',
+  title: 'BaseSplit - Split Bills with XMTP',
   description: 'Split bills easily using XMTP and Base',
 };
 

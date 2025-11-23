@@ -1,8 +1,8 @@
-# SplitEt 💸
+# BaseSplit 💸
 
 **Master Technical Specification for ETHGlobal Hackathon**
 
-SplitEt is a hybrid decentralized application that combines an XMTP Agent (for OCR and coordination) with a Base Miniapp (for UI and payments) to make bill splitting seamless and frictionless.
+BaseSplit is a hybrid decentralized application that combines an XMTP Agent (for OCR and coordination) with a Base Miniapp (for UI and payments) to make bill splitting seamless and frictionless.
 
 ## 🏆 Hackathon Target
 
@@ -379,7 +379,7 @@ MIT
 
 ### Scene 2: The Solution (15 sec)
 *Show phone screen with XMTP chat*
-"With SplitEt, just send your receipt to the chat."
+"With BaseSplit, just send your receipt to the chat."
 
 ### Scene 3: AI Processing (10 sec)
 *Show agent processing receipt*
