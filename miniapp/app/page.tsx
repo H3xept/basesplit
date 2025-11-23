@@ -1,4 +1,17 @@
+'use client';
+
+import { useAccount } from 'wagmi';
+import { ChatPanel } from '@/components/chat/ChatPanel';
+
 export default function Home() {
+  const { isConnected } = useAccount();
+
+  // Show chat when wallet is connected
+  if (isConnected) {
+    return <ChatPanel />;
+  }
+
+  // Show landing page when wallet is not connected
   return (
     <div className="min-h-screen flex items-center justify-center p-8 animate-fade-in">
       <div className="max-w-3xl w-full">
@@ -28,14 +41,14 @@ export default function Home() {
               {
                 number: '1',
                 icon: '📸',
-                title: 'Send a Receipt',
-                description: 'Share a receipt image in your XMTP chat',
+                title: 'Connect Wallet',
+                description: 'Connect your wallet to start chatting with the AI agent',
               },
               {
                 number: '2',
                 icon: '🤖',
-                title: 'AI Processing',
-                description: 'Our AI agent parses the receipt and creates a split bill',
+                title: 'Send Receipt',
+                description: 'Upload a receipt image in the chat - AI will parse it automatically',
               },
               {
                 number: '3',
@@ -73,6 +86,13 @@ export default function Home() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* CTA */}
+          <div className="mt-8 text-center">
+            <p className="text-gray-600 dark:text-gray-400 text-lg">
+              👆 Connect your wallet in the header to get started
+            </p>
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 import { http, createConfig, fallback } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
-import { coinbaseWallet, injected } from 'wagmi/connectors';
+import { coinbaseWallet, injected, walletConnect } from 'wagmi/connectors';
 
 // USDC contract addresses
 export const USDC_ADDRESS = {
@@ -12,6 +12,16 @@ export const config = createConfig({
   chains: [base, baseSepolia],
   connectors: [
     injected(), // Supports all injected wallets (MetaMask, Rabby, Rainbow, etc.)
+    walletConnect({
+      projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID!,
+      metadata: {
+        name: 'BaseSplit',
+        description: 'Split bills with XMTP and Base',
+        url: typeof window !== 'undefined' ? window.location.origin : 'https://splid2.vercel.app',
+        icons: [typeof window !== 'undefined' ? `${window.location.origin}/icon.png` : 'https://splid2.vercel.app/icon.png'],
+      },
+      showQrModal: true,
+    }),
     coinbaseWallet({
       appName: 'BaseSplit',
       preference: 'smartWalletOnly',
