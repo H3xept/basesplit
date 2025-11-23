@@ -11,26 +11,26 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#6366f1',
-          light: '#818cf8',
-          dark: '#4f46e5',
+          DEFAULT: '#F4A259',
+          light: '#F4A259',
+          dark: '#E89440',
         },
         secondary: {
-          DEFAULT: '#8b5cf6',
-          light: '#a78bfa',
-          dark: '#7c3aed',
+          DEFAULT: '#5A3A1A',
+          light: '#8B6F47',
+          dark: '#3D2612',
         },
         dark: {
-          bg: '#0f0f23',
-          card: '#1a1a35',
-          border: '#2a2a45',
-          hover: '#252540',
+          bg: '#1F1912',
+          card: '#2A2419',
+          border: '#3D2F1F',
+          hover: '#342B1F',
         },
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-primary-dark': 'linear-gradient(135deg, #0f0f23 0%, #1a1a35 50%, #252540 100%)',
-        'gradient-primary-light': 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 50%, #e5e7eb 100%)',
+        'gradient-primary-dark': 'linear-gradient(135deg, #1F1912 0%, #2A2419 50%, #342B1F 100%)',
+        'gradient-primary-light': 'linear-gradient(135deg, #F5F0E6 0%, #FDFCF9 50%, #E5DFD0 100%)',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',

@@ -164,7 +164,7 @@ export function BillSplitter({
   // Handle success
   if (isSuccess) {
     return (
-      <div className="bg-white dark:bg-dark-card rounded-2xl shadow-2xl p-8 border border-gray-100 dark:border-dark-border animate-scale-in">
+      <div className="bg-[#FDFCF9] dark:bg-dark-card rounded-2xl shadow-2xl p-8 border border-[#E5DFD0] dark:border-dark-border animate-scale-in">
         <div className="text-center">
           <div className="text-7xl mb-6 animate-scale-in">✅</div>
           <h2 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white">Payment Successful!</h2>
@@ -189,7 +189,7 @@ export function BillSplitter({
   }
 
   return (
-    <div className="bg-white dark:bg-dark-card rounded-2xl shadow-2xl p-8 border border-gray-100 dark:border-dark-border transition-all duration-300">
+    <div className="bg-[#FDFCF9] dark:bg-dark-card rounded-2xl shadow-2xl p-8 border border-[#E5DFD0] dark:border-dark-border transition-all duration-300">
       {/* Wallet Connection */}
       {!hasMounted || !isConnected ? (
         <div className="text-center py-12">
@@ -213,7 +213,7 @@ export function BillSplitter({
           <div className="flex flex-col gap-3 max-w-xs mx-auto">
             <button
               onClick={() => switchChain({ chainId: base.id })}
-              className="px-6 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 font-medium transition-all hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+              className="px-6 py-3 bg-secondary dark:bg-secondary-light text-white rounded-lg hover:bg-opacity-90 font-medium transition-all hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
             >
               Switch to Base
             </button>
@@ -253,7 +253,7 @@ export function BillSplitter({
                         ? 'bg-gray-50 dark:bg-gray-800/30 border-gray-200 dark:border-gray-700 opacity-50'
                         : isSelected
                         ? 'bg-primary/10 dark:bg-primary-light/20 border-primary dark:border-primary-light shadow-md'
-                        : 'border-gray-200 dark:border-dark-border hover:border-primary/50 dark:hover:border-primary-light/50 cursor-pointer hover:shadow-md bg-white dark:bg-dark-hover'
+                        : 'border-[#E5DFD0] dark:border-dark-border hover:border-primary/50 dark:hover:border-primary-light/50 cursor-pointer hover:shadow-md bg-[#FDFCF9] dark:bg-dark-hover'
                     }`}
                     onClick={() => !isClaimed && toggleItem(item.id)}
                   >

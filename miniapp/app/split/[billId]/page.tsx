@@ -22,7 +22,7 @@ export default async function SplitBillPage({ params }: PageProps) {
     <div className="min-h-screen p-4 py-8">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="bg-white dark:bg-dark-card rounded-2xl shadow-2xl p-8 mb-6 border border-gray-100 dark:border-dark-border animate-slide-up">
+        <div className="bg-[#FDFCF9] dark:bg-dark-card rounded-2xl shadow-2xl p-8 mb-6 border border-[#E5DFD0] dark:border-dark-border animate-slide-up">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-4xl font-bold text-gradient">Split the Bill 💸</h1>
             {bill.is_settled && (
