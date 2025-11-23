@@ -1,4 +1,8 @@
-import { sql } from '@vercel/postgres';
+import { createPool } from '@vercel/postgres';
+
+const pool = createPool({
+  connectionString: process.env.POSTGRES_URL,
+});
 
 export interface Bill {
   id: string;
@@ -23,9 +27,10 @@ export interface LineItem {
  * Get bill by ID
  */
 export async function getBill(billId: string): Promise<Bill | undefined> {
-  const { rows } = await sql`
-    SELECT * FROM bills WHERE id = ${billId}
-  `;
+  const { rows } = await pool.query(
+    'SELECT * FROM bills WHERE id = $1',
+    [billId]
+  );
 
   if (rows.length === 0) return undefined;
 
@@ -45,9 +50,10 @@ export async function getBill(billId: string): Promise<Bill | undefined> {
  * Get line items for a bill
  */
 export async function getLineItems(billId: string): Promise<LineItem[]> {
-  const { rows } = await sql`
-    SELECT * FROM line_items WHERE bill_id = ${billId}
-  `;
+  const { rows } = await pool.query(
+    'SELECT * FROM line_items WHERE bill_id = $1',
+    [billId]
+  );
 
   return rows.map(row => ({
     id: row.id,
@@ -82,9 +88,8 @@ export async function updateLineItemClaim(
   claimedBy: string,
   txHash: string
 ): Promise<void> {
-  await sql`
-    UPDATE line_items
-    SET claimed_by = ${claimedBy}, paid_tx_hash = ${txHash}
-    WHERE id = ${itemId}
-  `;
+  await pool.query(
+    'UPDATE line_items SET claimed_by = $1, paid_tx_hash = $2 WHERE id = $3',
+    [claimedBy, txHash, itemId]
+  );
 }
