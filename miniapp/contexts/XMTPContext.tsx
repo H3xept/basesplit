@@ -51,6 +51,13 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Auto-initialize when wallet connects
+  useEffect(() => {
+    if (isConnected && walletClient && !client && !isLoading) {
+      initialize();
+    }
+  }, [isConnected, walletClient, client, isLoading]);
+
   // Reset client when wallet disconnects
   useEffect(() => {
     if (!isConnected) {

@@ -1,19 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useXMTP } from '@/contexts/XMTPContext';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 
 export function ChatPanel() {
   const { client, isLoading, error, initialize } = useXMTP();
-
-  // Initialize XMTP client when component mounts
-  useEffect(() => {
-    if (!client && !isLoading && !error) {
-      initialize();
-    }
-  }, [client, isLoading, error, initialize]);
 
   // Loading state
   if (isLoading) {
