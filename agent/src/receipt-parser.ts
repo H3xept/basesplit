@@ -1,8 +1,15 @@
-import axios from 'axios';
+import OpenAI from 'openai';
 
-// Ollama API configuration
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
-const MODEL = process.env.OLLAMA_MODEL || 'llama3.2-vision';
+// OpenAI API configuration
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+if (!OPENAI_API_KEY) {
+  throw new Error('OPENAI_API_KEY environment variable is required');
+}
+
+const openai = new OpenAI({
+  apiKey: OPENAI_API_KEY,
+});
 
 export interface ParsedReceipt {
   items: Array<{
@@ -13,105 +20,127 @@ export interface ParsedReceipt {
   tax?: number;
   tip?: number;
   total?: number;
+  merchant?: string;
+  date?: string;
+  currency?: string;
 }
 
 /**
- * Parse receipt image using Ollama vision model
- * NOTE: Currently mocked for testing - returns default receipt data
+ * Parse receipt image using OpenAI GPT-4 Vision API
  */
-export async function parseReceiptWithOllama(
+export async function parseReceiptWithOpenAI(
   imageBase64: string
 ): Promise<ParsedReceipt> {
-  // MOCK: Return default receipt data for testing
-  console.log('📋 Using mocked receipt parser (OCR disabled)');
+  console.log('📋 Parsing receipt with OpenAI Vision API...');
 
-  const mockReceipt: ParsedReceipt = {
-    items: [
-      { description: "Margherita Pizza", price: 0.01 },
-      { description: "Caesar Salad", price: 0.01 },
-      { description: "Spaghetti Carbonara", price: 0.01 },
-      { description: "Tiramisu", price: 0.01 },
-      { description: "Coca Cola (2x)", price: 0.01 }
-    ],
-    subtotal: 0.05,
-    tax: 0.01,
-    tip: 0.01,
-    total: 0.07
-  };
+  const systemPrompt = `You are an advanced optical character recognition (OCR) assistant specialized in restaurant and retail receipts. Your job is to extract line items, prices, and the total from a provided image and format them into strict JSON.
 
-  console.log(`✅ Mocked receipt with ${mockReceipt.items.length} items (Total: $${mockReceipt.total})`);
+Constraints:
+- Ignore tax, subtotal, and tip lines in the items array. Only extract distinct purchasable items.
+- If multiple counts of an item exist (e.g., "2x Burger"), split them into separate entries if possible, or note the quantity in the description.
+- Ensure all prices are numbers (floats), not strings.
+- Do not hallucinate items that are not visible.
 
-  // Simulate processing delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-
-  return mockReceipt;
-
-  /* ORIGINAL OLLAMA INTEGRATION (commented out for testing)
-  const prompt = `You are a receipt parser. Analyze this receipt image and extract the line items with their prices.
-
-Return a JSON object with this exact structure:
+Output Format (JSON Only):
 {
+  "merchant": "Name of the place (or Unknown)",
+  "date": "YYYY-MM-DD (or null)",
+  "currency": "USD",
+  "total_amount": 0.00,
   "items": [
-    {"description": "Item name", "price": 12.99}
-  ],
-  "subtotal": 50.00,
-  "tax": 5.00,
-  "tip": 10.00,
-  "total": 65.00
+    {
+      "description": "Burger",
+      "price": 15.00
+    },
+    {
+      "description": "Fries",
+      "price": 5.50
+    }
+  ]
 }
 
-Rules:
-- Extract ALL line items from the receipt
-- Prices should be numbers (not strings)
-- If you can't find subtotal, tax, tip, or total, omit those fields
-- Be accurate with prices
-- Return ONLY the JSON object, no other text
-
-Now parse this receipt:`;
+Edge Case Handling:
+- If the image is blurry and unreadable, return: {"error": "IMAGE_UNREADABLE"}
+- If the image is not a receipt, return: {"error": "NOT_A_RECEIPT"}`;
 
   try {
-    const response = await axios.post(`${OLLAMA_URL}/api/generate`, {
-      model: MODEL,
-      prompt: prompt,
-      images: [imageBase64],
-      stream: false,
-      format: 'json',
-      options: {
-        temperature: 0.1, // Low temperature for more consistent parsing
-      }
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt,
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:image/jpeg;base64,${imageBase64}`,
+              },
+            },
+          ],
+        },
+      ],
+      max_tokens: 1000,
+      temperature: 0.1,
     });
 
-    const parsedResponse = response.data.response;
-
-    // Parse the JSON response
-    let receiptData: ParsedReceipt;
-    try {
-      receiptData = JSON.parse(parsedResponse);
-    } catch (parseError) {
-      console.error('Failed to parse Ollama response as JSON:', parsedResponse);
-      throw new Error('Invalid JSON response from Ollama');
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response from OpenAI');
     }
 
-    // Validate the response structure
-    if (!receiptData.items || !Array.isArray(receiptData.items)) {
+    // Parse JSON response
+    let parsedResponse: any;
+    try {
+      parsedResponse = JSON.parse(content);
+    } catch (parseError) {
+      console.error('Failed to parse OpenAI response as JSON:', content);
+      throw new Error('Invalid JSON response from OpenAI');
+    }
+
+    // Check for error cases
+    if (parsedResponse.error === 'IMAGE_UNREADABLE') {
+      throw new Error('IMAGE_UNREADABLE: The receipt image is too blurry or unclear to read');
+    }
+
+    if (parsedResponse.error === 'NOT_A_RECEIPT') {
+      throw new Error('NOT_A_RECEIPT: The provided image is not a receipt');
+    }
+
+    // Validate response structure
+    if (!parsedResponse.items || !Array.isArray(parsedResponse.items)) {
       throw new Error('Invalid receipt data: missing items array');
     }
 
+    // Convert to ParsedReceipt format
+    const receiptData: ParsedReceipt = {
+      merchant: parsedResponse.merchant,
+      date: parsedResponse.date,
+      currency: parsedResponse.currency,
+      items: parsedResponse.items.map((item: any) => ({
+        description: item.description,
+        price: parseFloat(item.price),
+      })),
+      total: parsedResponse.total_amount,
+    };
+
     // Validate items
     receiptData.items.forEach((item, index) => {
-      if (!item.description || typeof item.price !== 'number') {
-        throw new Error(`Invalid item at index ${index}`);
+      if (!item.description || typeof item.price !== 'number' || isNaN(item.price)) {
+        throw new Error(`Invalid item at index ${index}: ${JSON.stringify(item)}`);
       }
     });
 
-    console.log(`✅ Parsed receipt with ${receiptData.items.length} items`);
+    console.log(`✅ Parsed receipt with ${receiptData.items.length} items (Total: $${receiptData.total})`);
     return receiptData;
 
   } catch (error) {
-    console.error('Error parsing receipt:', error);
+    console.error('Error parsing receipt with OpenAI:', error);
     throw error;
   }
-  */
 }
 
 /**
