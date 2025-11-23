@@ -322,6 +322,12 @@ async function main() {
                 console.log('  Type:', message.contentType?.typeId || 'unknown');
                 console.log('  From:', message.senderInboxId);
 
+                // Ignore messages from the agent itself
+                if (message.senderInboxId === client.inboxId) {
+                    console.log('⏭️  Skipping own message');
+                    return;
+                }
+
                 // Safely log content
                 try {
                     const contentStr = JSON.stringify(message.content);
